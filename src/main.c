@@ -18,122 +18,166 @@
 /*Текстовый файл содержит в первой строке первым
  * числом количество строк, в следующих числах этой строки -- размеры строк,
  * дальнейшие строки содержат непосредственно числа*/
+#include "main.h"
 #include "RM.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-
-void NullMatrix(double **arr);
-void FillMatrixRandom(double **arr, double a, double b);
-void FillMatrixManualy(double **arr);
-double Random(double x, double y);
-double **ManualCreate(void);
-double **ReadTextFile(const char *fname);
-uint8_t WriteTextFile(const char *fname, double **arr);
-uint8_t WriteBinary(const char *fname, double **arr);
-double **ReadBinary(const char *fname);
-void Print(double **arr);
-uint8_t CommandPicker(double **flag);
-uint16_t *CreateSizeArray(uint16_t rows);
-
-enum Commands
-{
-	INVALID,
-	LEAVE,
-	MANUAL_CREATE,
-	READ_TXT,
-	READ_BIN,
-	FILL_ZERO,
-	FILL_RANDOM,
-	FILL_MANUAL,
-	PRINT,
-	WRITE_TXT,
-	WRITE_BIN,
-	REMOVE
-};
-
 int main(void)
 {
 	srand(time(NULL));
-	double **matrix = NULL;
-	char fname[256];
-	uint8_t runs = 1;
+	Matrixes M;
+	M.count = 0;
+	M.m = NULL;
+	do
+	{
+		switch (CommandPicker(&M))
+		{
+		case LEAVE:
+			return ERR_NO;
+		case SWITCH:
+			M.cur++;
+			if (M.cur == M.count)
+				M.cur = 0;
+			break;
+		case REMOVE:;
+			break;
+		case READ_BIN:;
+			break;
+		case READ_TXT:;
+			break;
+		case MANUAL_CREATE:
+			if (ManualMatrixCreation(&M))
+				printf("Не удалось создать новую матрицу!\n");
+			break;
+		// Функции работы с открытой матрицей
+		case FILL_MANUAL:;
+		case PRINT:
+			Print(M.m[M.cur]);
+			break;
+		case FILL_ZERO:;
+			break;
+		case FILL_RANDOM:;
+			break;
+		case WRITE_BIN:;
+			break;
+		case WRITE_TXT:;
+			break;
+		}
+	} while (1);
+}
+
+uint8_t ManualMatrixCreation(Matrixes *M)
+{
+	uint16_t lines;
+	// Выделение памяти под вектор матриц
+	double ***tmp_vec = (double ***)realloc(M->m, sizeof(double **) * (1 + M->count));
+	if (!tmp_vec)
+		return ERR_MALLOC;
+
+	printf("Введите число строк в матрице: ");
+	scanf("%hu", &lines);
+	// Создание массива размеров
+	uint16_t *lineSizes = CreateSizeArray(lines);
+	if (!lineSizes)
+		return ERR_MALLOC;
+
+	// Создание матрицы на основе массива размеров
+	double **tmp = RM_CreateArray(lines, lineSizes);
+	free(lineSizes); // Освобождение массива размеров
+	if (!tmp)
+		return ERR_MALLOC;
+
+	// Если удалось создать матрицу:
+	M->m = tmp_vec; // новый указатель записывается
+	// счётчик увеличивается
+	(M->count) ? M->cur++ : (M->cur = 0);
+	M->count++;
+	M->m[M->cur] = tmp; // Запись матрицы в вектор
+	return ERR_NO;		// Возврат отсутствия кода ошибок
+}
+
+// Выбор пользователем действия над матрицей
+uint8_t CommandPicker(Matrixes *m)
+{ // q b k m p w t 0 c d
+	printf("\n%s%s%s%s%s", "Выберите действие:\n", "Для выхода из программы введите q,\n",
+		   "Чтобы прочитать матрицу из бинарного файла, введите b,\n",
+		   "Чтобы прочитать матрицу из текстового файла, введите k,\n", "Чтобы в ручную ввести матрицу, введите m");
+	if (m->count) // Если матрицы есть
+	{
+		printf(",\n%s%s%s%s%s%s%s\n", "Чтобы вывести матрицу на экран, введите p\n",
+			   "Чтобы записать матрицу в бинарный файл, введите w\n",
+			   "Чтобы записать матрицу в текстовый файл, введите t\n", "0 - зануление матрицы\n",
+			   "c - ручное задание значений\n", "r - Наполнение из некоторого диапазона\n",
+			   "d - удаление матрицы из памяти\n");
+		printf("Выбрана матрица %hu\n", m->cur);
+	}
+	else
+		printf("\nМатриц не загружено!\n");
 
 	do
 	{
-		switch (CommandPicker(matrix))
+		char Choice;
+		scanf("%c", &Choice);
+		switch (Choice)
 		{
+		case 'q':
+		case 'Q':
+			return LEAVE;
+		case 'b':
+		case 'B':
+			return READ_BIN;
+		case 'k':
+		case 'K':
+			return READ_TXT;
+		case 'm':
+		case 'M':
+			return MANUAL_CREATE;
+
+			// Функции работы с открытой матрицей
+		case 'd':
+		case 'D':
+			if (m->count)
+				return REMOVE;
+			break;
+		case 's':
+		case 'S':
+			if (m->count)
+				return SWITCH;
+			break;
+		case 'c':
+		case 'C':
+			if (m->count)
+				return FILL_MANUAL;
+			break;
+		case 'p':
+		case 'P':
+			if (m->count)
+				return PRINT;
+			break;
+		case '0':
+			if (m->count)
+				return FILL_ZERO;
+			break;
+		case 'r':
+		case 'R':
+			if (m->count)
+				return FILL_RANDOM;
+			break;
+		case 'w':
+		case 'W':
+			if (m->count)
+				return WRITE_BIN;
+			break;
+		case 't':
+		case 'T':
+			if (m->count)
+				return WRITE_TXT;
+			break;
 		default:
-			break;
-
-		case MANUAL_CREATE: {
-			printf("Число строк: ");
-			uint16_t rows;
-			scanf("%hu", &rows);
-			uint16_t *cols = CreateSizeArray(rows);
-			matrix = RM_CreateArray(rows, cols);
-			free(cols);
+			continue;
 		}
-		break;
-
-		case FILL_RANDOM:{
-			double r[2];
-			printf("Введите диапазон чисел: ");
-			scanf("%lf %lf", r, r + 1);
-			FillMatrixRandom(matrix, *r, *(r + 1));
-		}
-			break;
-
-		case FILL_MANUAL:
-			FillMatrixManualy(matrix);
-			break;
-
-		case FILL_ZERO:
-			NullMatrix(matrix);
-			break;
-
-		case LEAVE:
-			runs = 0;
-			RM_Free(matrix);
-			return NOERR;
-
-		case REMOVE:
-			RM_Free(matrix);
-			matrix = NULL;
-			break;
-
-		case WRITE_TXT:
-			printf("Название открываемого файла: ");
-			scanf("%255s", fname);
-			if (WriteTextFile(fname, matrix))
-				puts("Не удалось записать матрицу!");
-			break;
-
-		case WRITE_BIN:
-			printf("Название открываемого файла: ");
-			scanf("%255s", fname);
-			if (WriteBinary(fname, matrix))
-				puts("Не удалось записать матрицу!");
-			break;
-
-		case READ_BIN:
-			printf("Название открываемого файла: ");
-			scanf("%255s", fname);
-			matrix = ReadBinary(fname);
-			break;
-
-		case READ_TXT:
-			printf("Название открываемого файла: ");
-			scanf("%255s", fname);
-			matrix = ReadTextFile(fname);
-			break;
-
-		case PRINT:
-			Print(matrix);
-			break;
-		}
-	} while (runs);
+	} while (1);
 }
 
 // Создание массива размеров матрицы на rows строк. Возвращаемый адрес необходимо освободить!
@@ -150,59 +194,6 @@ uint16_t *CreateSizeArray(uint16_t rows)
 	}
 
 	return cols;
-}
-// Выбор пользователем действия над матрицей
-uint8_t CommandPicker(double **flag)
-{
-	puts("Для выхода из программы введите q");
-	if (flag) // Если матрица есть
-	{
-		printf("Выберите действие над матрицей: %s%s%s%s%s%s%s\n", "p - вывод на экран\n",
-			   "b - запись в бинарный файл\n", "t - запись в текстовый файл\n", "0 - зануление\n",
-			   "m - ручное задание значений\n", "r - Наполнение из некоторого диапазона\n",
-			   "d - удаление матрицы из памяти");
-	}
-	else // Если матрицы нет
-	{
-		puts("Матрица не была загружена!");
-		printf("Укажите способ создания матрицы: %s%s%s\n", "m - ручное задание размеров\n",
-			   "b - прочтение из бинарного файла\n", "t - прочтение из текстового файла\n");
-	}
-
-	do
-	{
-		char Choice;
-		scanf("%c", &Choice);
-		switch (Choice)
-		{
-		case 'q':
-		case 'Q':
-			return LEAVE;
-		case 'd':
-		case 'D':
-			return REMOVE;
-			// return (flag) ? REMOVE : INVALID;
-		case 'p':
-		case 'P':
-			return (flag) ? PRINT : INVALID;
-		case '0':
-			return (flag) ? FILL_ZERO : INVALID;
-		case 'r':
-		case 'R':
-			return (flag) ? FILL_RANDOM : INVALID;
-		case 'b':
-		case 'B':
-			return (flag) ? WRITE_BIN : READ_BIN;
-		case 't':
-		case 'T':
-			return (flag) ? WRITE_TXT : READ_TXT;
-		case 'm':
-		case 'M':
-			return (flag) ? FILL_MANUAL : MANUAL_CREATE;
-		default:
-			continue;
-		}
-	} while (1);
 }
 
 // Печать матрицы на экран

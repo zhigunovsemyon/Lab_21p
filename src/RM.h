@@ -5,8 +5,9 @@
 
 enum Errors
 {
-	NOERR,
-	FILEERR
+	ERR_NO,
+	ERR_FILE,
+	ERR_MALLOC
 };
 
 // Освобождение памаяти массива

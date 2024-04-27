@@ -139,7 +139,7 @@ double **RM_ReadTxtFile(FILE *f)
 uint8_t RM_WriteBinary(double **arr, FILE *f)
 {
 	if (!f)				// Если файл некорректный
-		return FILEERR; // возвращается код ошибки
+		return ERR_FILE; // возвращается код ошибки
 
 	// Извлечение числа строк, запись
 	uint16_t lines = RM_GetLineCount(arr);
@@ -153,7 +153,7 @@ uint8_t RM_WriteBinary(double **arr, FILE *f)
 	// Запись с начала области элементов
 	fwrite(int_GetMinusOne(arr[0]), 1, mem, f);
 
-	return NOERR; // Возврат кода отсутствия ошибок
+	return ERR_NO; // Возврат кода отсутствия ошибок
 }
 
 /*Чтение матрицы из бинарного источника f
@@ -203,7 +203,7 @@ double **RM_ReadBinFile(FILE *f)
 uint8_t RM_WriteTxtFile(double **arr, FILE *f)
 {
 	if (!f)				// Если сток некорректный
-		return FILEERR; // Функция прерывается с возвратом ошибки
+		return ERR_FILE; // Функция прерывается с возвратом ошибки
 
 	// Извлечение числа строк, запись
 	uint16_t lines = RM_GetLineCount(arr);
@@ -219,6 +219,6 @@ uint8_t RM_WriteTxtFile(double **arr, FILE *f)
 	RM_Print(arr, "%lf ", f);
 
 	// Возврат отсутсвия ошибки
-	return NOERR;
+	return ERR_NO;
 }
 
