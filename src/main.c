@@ -319,10 +319,9 @@ uint8_t ReadTextFile(Matrixes *M, const char *fname)
 // инициализации посредством srand()
 double Random(double x, double y)
 {
-	// Требует доработки для генерации нецелых чисел
-	int a = (int)x;
-	int b = (int)y;
-	return (double)(rand() % (b - a + 1) + a);
+	return x +	//К полученному ниже прибавляется нижняя планка диапазона
+		(double)(rand()) *	//rand() создаёт случайное число в диапазоне (0,RAND_MAX), 
+			((y - x) / RAND_MAX); //которое умножается на отношение корридора чисел к RAND_MAX
 }
 
 // Заполнение матрицы arr случайными числами
