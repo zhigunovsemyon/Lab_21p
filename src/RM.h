@@ -1,6 +1,7 @@
 #ifndef RM_H_
 #define RM_H_
 #include <malloc.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 
