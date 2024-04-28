@@ -19,6 +19,7 @@
  * числом количество строк, в следующих числах этой строки -- размеры строк,
  * дальнейшие строки содержат непосредственно числа*/
 #include "main.h"
+#include <stdio.h>
 int main(void)
 {
 	srand(time(NULL));
@@ -32,17 +33,30 @@ int main(void)
 		{
 		case LEAVE:
 			return ERR_NO;
+
 		case SWITCH:
 			M.cur++;
 			if (M.cur == M.count)
 				M.cur = 0;
 			break;
+
 		case REMOVE:;
 			break;
-		case READ_BIN:;
+
+		case READ_BIN:
+			printf("Название открываемого файла: ");
+			scanf("%99s", fname);
+			if(ReadBinary(&M, fname))
+				puts("Не удалось создать матрицу!");
 			break;
-		case READ_TXT:;
+
+		case READ_TXT:
+			printf("Название открываемого файла: ");
+			scanf("%99s", fname);
+			if(ReadTextFile(&M, fname))
+				puts("Не удалось создать матрицу!");
 			break;
+		
 		case MANUAL_CREATE:
 			if (ManualMatrixCreation(&M))
 				printf("Не удалось создать новую матрицу!\n");
@@ -91,7 +105,8 @@ uint8_t ManualMatrixCreation(Matrixes *M)
 {
 	uint16_t lines;
 	// Выделение памяти под вектор матриц
-	double ***tmp_vec = (double ***)realloc(M->m, sizeof(double **) * (1 + M->count));
+	double ***tmp_vec =
+		(double ***)realloc(M->m, sizeof(double **) * (1 + M->count));
 	if (!tmp_vec)
 		return ERR_MALLOC;
 
@@ -114,21 +129,185 @@ uint8_t ManualMatrixCreation(Matrixes *M)
 	(M->count) ? M->cur++ : (M->cur = 0);
 	M->count++;
 	M->m[M->cur] = tmp; // Запись матрицы в вектор
-	return ERR_NO;		// Возврат отсутствия кода ошибок
+	return ERR_NO; // Возврат отсутствия кода ошибок
+}
+
+// Создание массива размеров матрицы на rows строк. Возвращаемый адрес
+// необходимо освободить!
+uint16_t *CreateSizeArray(uint16_t rows)
+{
+	// Выделение памяти под массив
+	uint16_t *cols = (uint16_t *)malloc(rows * sizeof(uint16_t));
+
+	// Перебор и наполнение матрицы
+	for (uint16_t i = 0; i < rows; ++i)
+	{
+		printf("Размер %hu строки: ", i);
+		scanf("%hu", cols + i);
+	}
+
+	return cols;
+}
+
+// Печать матрицы на экран
+void Print(double **arr)
+{
+	putchar('\n');
+	RM_Print(arr, "%.3lf\t", stdout);
+	putchar('\n');
+}
+
+/*Чтение матрицы из бинарного файла с названием fname
+ * при неполадках возвращает NULL */
+uint8_t ReadBinary(Matrixes *M, const char *fname)
+{
+	// Выделение памяти под вектор матриц
+	double ***tmp_vec =
+		(double ***)realloc(M->m, sizeof(double **) * (1 + M->count));
+	if (!tmp_vec)
+		return ERR_MALLOC;
+
+	// Открытие нужного файла
+	FILE *f = fopen(fname, "rb");
+
+	// Попытка чтения этого файла, при неудаче возвращается NULL
+	double **tmp = RM_ReadBinFile(f);
+	if (f)		   // Если файл удалось открыть
+		fclose(f); // то осуществляется его закрытие
+	
+	if (!tmp)
+		return ERR_MALLOC;
+
+	// Если удалось создать матрицу:
+	M->m = tmp_vec; // новый указатель записывается
+	// счётчик увеличивается
+	(M->count) ? M->cur++ : (M->cur = 0);
+	M->count++;
+	M->m[M->cur] = tmp; // Запись матрицы в вектор
+	return ERR_NO; // Возврат отсутствия кода ошибок
+}
+
+/*Запись матрицы в бинарный файл с названием fname
+ * при неполадках возвращает код ошибки*/
+uint8_t WriteBinary(const char *fname, double **arr)
+{
+	// Открытие нужного файла
+	FILE *f = fopen(fname, "wb");
+
+	// Запись в открытый файл, сохранение возвращённого кода ошибки
+	uint8_t ret = RM_WriteBinary(arr, f);
+
+	if (!ret)	   // Если файл удалось открыть
+		fclose(f); // то осуществляется его закрытие
+	return ret;	   // Возврат кода ошибки
+}
+
+/*Запись матрицы в текстовый файл с названием fname
+ * при неполадках возвращает код ошибки */
+uint8_t WriteTextFile(const char *fname, double **arr)
+{
+	// Открытие нужного файла
+	FILE *f = fopen(fname, "wt");
+
+	// Запись в открытый файл, сохранение возвращённого кода ошибки
+	uint8_t ret = RM_WriteTxtFile(arr, f);
+
+	if (!ret)	   // Если файл удалось открыть
+		fclose(f); // то осуществляется его закрытие
+	return ret;	   // Возврат кода ошибки
+}
+
+/*Чтение матрицы из текстового файла с названием fname
+ * при неполадках возвращает NULL */
+uint8_t ReadTextFile(Matrixes *M, const char *fname)
+{
+	// Выделение памяти под вектор матриц
+	double ***tmp_vec =
+		(double ***)realloc(M->m, sizeof(double **) * (1 + M->count));
+	if (!tmp_vec)
+		return ERR_MALLOC;
+
+	// Открытие нужного файла
+	FILE *f = fopen(fname, "rt");
+
+	// Попытка чтения этого файла, при неудаче возвращается NULL
+	double **tmp = RM_ReadTxtFile(f);
+
+	if (f)		   // Если файл удалось открыть
+		fclose(f); // то осуществляется его закрытие
+	
+	if (!tmp)
+		return ERR_MALLOC;
+
+	// Если удалось создать матрицу:
+	M->m = tmp_vec; // новый указатель записывается
+	// счётчик увеличивается
+	(M->count) ? M->cur++ : (M->cur = 0);
+	M->count++;
+	M->m[M->cur] = tmp; // Запись матрицы в вектор
+	return ERR_NO; // Возврат отсутствия кода ошибок
+}
+
+// Возврат случайного числа из диапазона [a, b]. Требует предварительной
+// инициализации посредством srand()
+double Random(double x, double y)
+{
+	// Требует доработки для генерации нецелых чисел
+	int a = (int)x;
+	int b = (int)y;
+	return (double)(rand() % (b - a + 1) + a);
+}
+
+// Заполнение матрицы arr случайными числами
+void FillMatrixRandom(double **arr, double a, double b)
+{
+	if (a > b) //"Переворот" чисел
+	{
+		double tmp = b;
+		b = a;
+		a = tmp;
+	}
+
+	for (uint16_t j, n, i = 0, m = RM_GetLineCount(arr); i < m; ++i)
+		for (j = 0, n = RM_GetElCount(arr[i]); j < n; ++j)
+			arr[i][j] = Random(a, b);
+}
+
+// Зануление матрицы arr
+void NullMatrix(double **arr)
+{
+	for (uint16_t j, n, i = 0, m = RM_GetLineCount(arr); i < m; ++i)
+		for (j = 0, n = RM_GetElCount(arr[i]); j < n; ++j)
+			arr[i][j] = 0;
+}
+
+// Ручное наполнение матрицы arr
+void FillMatrixManualy(double **arr)
+{
+	for (uint16_t j, n, i = 0, m = RM_GetLineCount(arr); i < m; ++i)
+		for (j = 0, n = RM_GetElCount(arr[i]); j < n; ++j)
+		{
+			printf("Элемент [%hu][%hu] = ", i, j);
+			scanf("%lf", arr[i] + j);
+		}
 }
 
 // Выбор пользователем действия над матрицей
 uint8_t CommandPicker(Matrixes *m)
 { // q b k m p w t 0 c d
-	printf("\n%s%s%s%s%s", "Выберите действие:\n", "Для выхода из программы введите q,\n",
+	printf("\n%s%s%s%s%s", "Выберите действие:\n",
+		   "Для выхода из программы введите q,\n",
 		   "Чтобы прочитать матрицу из бинарного файла, введите b,\n",
-		   "Чтобы прочитать матрицу из текстового файла, введите k,\n", "Чтобы в ручную ввести матрицу, введите m");
+		   "Чтобы прочитать матрицу из текстового файла, введите k,\n",
+		   "Чтобы в ручную ввести матрицу, введите m");
 	if (m->count) // Если матрицы есть
 	{
-		printf(",\n%s%s%s%s%s%s%s\n", "Чтобы вывести матрицу на экран, введите p\n",
+		printf(",\n%s%s%s%s%s%s%s\n",
+			   "Чтобы вывести матрицу на экран, введите p\n",
 			   "Чтобы записать матрицу в бинарный файл, введите w\n",
-			   "Чтобы записать матрицу в текстовый файл, введите t\n", "0 - зануление матрицы\n",
-			   "c - ручное задание значений\n", "r - Наполнение из некоторого диапазона\n",
+			   "Чтобы записать матрицу в текстовый файл, введите t\n",
+			   "0 - зануление матрицы\n", "c - ручное задание значений\n",
+			   "r - Наполнение из некоторого диапазона\n",
 			   "d - удаление матрицы из памяти\n");
 		printf("Выбрана матрица %hu\n", m->cur);
 	}
@@ -198,131 +377,4 @@ uint8_t CommandPicker(Matrixes *m)
 			continue;
 		}
 	} while (1);
-}
-
-// Создание массива размеров матрицы на rows строк. Возвращаемый адрес необходимо освободить!
-uint16_t *CreateSizeArray(uint16_t rows)
-{
-	// Выделение памяти под массив
-	uint16_t *cols = (uint16_t *)malloc(rows * sizeof(uint16_t));
-
-	// Перебор и наполнение матрицы
-	for (uint16_t i = 0; i < rows; ++i)
-	{
-		printf("Размер %hu строки: ", i);
-		scanf("%hu", cols + i);
-	}
-
-	return cols;
-}
-
-// Печать матрицы на экран
-void Print(double **arr)
-{
-	putchar('\n');
-	RM_Print(arr, "%.3lf\t", stdout);
-	putchar('\n');
-}
-
-/*Чтение матрицы из бинарного файла с названием fname
- * при неполадках возвращает NULL */
-double **ReadBinary(const char *fname)
-{
-	// Открытие нужного файла
-	FILE *f = fopen(fname, "rb");
-
-	// Попытка чтения этого файла, при неудаче возвращается NULL
-	double **ret = RM_ReadBinFile(f);
-
-	if (f)		   // Если файл удалось открыть
-		fclose(f); // то осуществляется его закрытие
-	return ret;	   // Возврат матрицы, или NULL
-}
-
-/*Запись матрицы в бинарный файл с названием fname
- * при неполадках возвращает код ошибки*/
-uint8_t WriteBinary(const char *fname, double **arr)
-{
-	// Открытие нужного файла
-	FILE *f = fopen(fname, "wb");
-
-	// Запись в открытый файл, сохранение возвращённого кода ошибки
-	uint8_t ret = RM_WriteBinary(arr, f);
-
-	if (!ret)	   // Если файл удалось открыть
-		fclose(f); // то осуществляется его закрытие
-	return ret;	   // Возврат кода ошибки
-}
-
-/*Запись матрицы в текстовый файл с названием fname
- * при неполадках возвращает код ошибки */
-uint8_t WriteTextFile(const char *fname, double **arr)
-{
-	// Открытие нужного файла
-	FILE *f = fopen(fname, "wt");
-
-	// Запись в открытый файл, сохранение возвращённого кода ошибки
-	uint8_t ret = RM_WriteTxtFile(arr, f);
-
-	if (!ret)	   // Если файл удалось открыть
-		fclose(f); // то осуществляется его закрытие
-	return ret;	   // Возврат кода ошибки
-}
-
-/*Чтение матрицы из текстового файла с названием fname
- * при неполадках возвращает NULL */
-double **ReadTextFile(const char *fname)
-{
-	// Открытие нужного файла
-	FILE *f = fopen(fname, "rt");
-
-	// Попытка чтения этого файла, при неудаче возвращается NULL
-	double **ret = RM_ReadTxtFile(f);
-
-	if (f)		   // Если файл удалось открыть
-		fclose(f); // то осуществляется его закрытие
-	return ret;	   // Возврат матрицы, или NULL
-}
-
-// Возврат случайного числа из диапазона [a, b]. Требует предварительной инициализации посредством srand()
-double Random(double x, double y)
-{
-	// Требует доработки для генерации нецелых чисел
-	int a = (int)x;
-	int b = (int)y;
-	return (double)(rand() % (b - a + 1) + a);
-}
-
-// Заполнение матрицы arr случайными числами
-void FillMatrixRandom(double **arr, double a, double b)
-{
-	if (a > b) //"Переворот" чисел
-	{
-		double tmp = b;
-		b = a;
-		a = tmp;
-	}
-
-	for (uint16_t j, n, i = 0, m = RM_GetLineCount(arr); i < m; ++i)
-		for (j = 0, n = RM_GetElCount(arr[i]); j < n; ++j)
-			arr[i][j] = Random(a, b);
-}
-
-// Зануление матрицы arr
-void NullMatrix(double **arr)
-{
-	for (uint16_t j, n, i = 0, m = RM_GetLineCount(arr); i < m; ++i)
-		for (j = 0, n = RM_GetElCount(arr[i]); j < n; ++j)
-			arr[i][j] = 0;
-}
-
-// Ручное наполнение матрицы arr
-void FillMatrixManualy(double **arr)
-{
-	for (uint16_t j, n, i = 0, m = RM_GetLineCount(arr); i < m; ++i)
-		for (j = 0, n = RM_GetElCount(arr[i]); j < n; ++j)
-		{
-			printf("Элемент [%hu][%hu] = ", i, j);
-			scanf("%lf", arr[i] + j);
-		}
 }
