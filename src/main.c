@@ -19,9 +19,6 @@
  * числом количество строк, в следующих числах этой строки -- размеры строк,
  * дальнейшие строки содержат непосредственно числа*/
 #include "main.h"
-#include "RM.h"
-#include <stdint.h>
-#include <stdio.h>
 int main(void)
 {
 	srand(time(NULL));
@@ -90,6 +87,11 @@ int main(void)
 		}
 		break;
 
+		case COPY:
+			if(CopyMatrix(&M))
+				puts("Не удалось скопировать матрицу!");
+			break;
+
 		case WRITE_TXT:
 			printf("Название записываемого файла: ");
 			scanf("%99s", fname);
@@ -105,6 +107,27 @@ int main(void)
 			break;
 		}
 	} while (1);
+}
+
+//Копирование текущей матрицы в дескрипторе M
+uint8_t CopyMatrix(Matrixes *M)
+{
+	double ***tmp_vec =
+		(double ***)realloc(M->m, sizeof(double **) * (1 + M->count));
+	if (!tmp_vec)
+		return ERR_MALLOC;
+
+	double **tmp = RM_CopyMatrix(M->m[M->cur]);
+	if(!tmp)
+		return ERR_MALLOC;
+
+	// Если удалось создать матрицу:
+	M->m = tmp_vec; // новый указатель записывается
+	// счётчик увеличивается
+	(M->count) ? M->cur++ : (M->cur = 0);
+	M->count++;
+	M->m[M->cur] = tmp; // Запись матрицы в вектор
+	return ERR_NO; // Возврат отсутствия кода ошибок
 }
 
 // Удаление одной матрицы из списка М
@@ -338,7 +361,7 @@ void FillMatrixManualy(double **arr)
 
 // Выбор пользователем действия над матрицей
 uint8_t CommandPicker(Matrixes *m)
-{ // q b k m p w t 0 c d
+{ // q b k m p w t 0 c d i
 	printf("\n%s%s%s%s%s", "Выберите действие:\n",
 		   "Для выхода из программы введите q,\n",
 		   "Чтобы прочитать матрицу из бинарного файла, введите b,\n",
@@ -346,11 +369,12 @@ uint8_t CommandPicker(Matrixes *m)
 		   "Чтобы в ручную ввести матрицу, введите m");
 	if (m->count) // Если матрицы есть
 	{
-		printf(",\n%s%s%s%s%s%s%s\n",
+		printf(",\n%s%s%s%s%s%s%s%s\n",
 			   "Чтобы вывести матрицу на экран, введите p\n",
 			   "Чтобы записать матрицу в бинарный файл, введите w\n",
+			   "Чтобы продублировать матрицу, введите c\n",
 			   "Чтобы записать матрицу в текстовый файл, введите t\n",
-			   "0 - зануление матрицы\n", "c - ручное задание значений\n",
+			   "0 - зануление матрицы\n", "i - ручное задание значений\n",
 			   "r - Наполнение из некоторого диапазона\n",
 			   "d - удаление матрицы из памяти\n");
 		printf("Выбрана матрица %hu\n", m->cur);
@@ -388,8 +412,8 @@ uint8_t CommandPicker(Matrixes *m)
 			if (m->count)
 				return SWITCH;
 			break;
-		case 'c':
-		case 'C':
+		case 'i':
+		case 'I':
 			if (m->count)
 				return FILL_MANUAL;
 			break;
@@ -401,6 +425,11 @@ uint8_t CommandPicker(Matrixes *m)
 		case '0':
 			if (m->count)
 				return FILL_ZERO;
+			break;
+		case 'c':
+		case 'C':
+			if (m->count)
+				return COPY;
 			break;
 		case 'r':
 		case 'R':

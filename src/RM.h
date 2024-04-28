@@ -1,6 +1,7 @@
 #ifndef RM_H_
 #define RM_H_
 #include <malloc.h>
+#include <string.h>
 #include <stdint.h>
 
 enum Errors
@@ -9,6 +10,9 @@ enum Errors
 	ERR_FILE,
 	ERR_MALLOC
 };
+
+//Функция копирования матрицы M
+double **RM_CopyMatrix(double **M);
 
 // Освобождение памаяти массива
 void RM_Free(double **arr);

@@ -10,8 +10,8 @@ static void *int_GetMinusOne(void *p)
 static uint16_t int_SumOfArray(uint16_t *arr, uint16_t Amount)
 {
 	/*Перебор элементов массива */
-	int16_t Sum = arr[0];
-	for (int16_t i = 1; i < Amount; ++i)
+	uint16_t Sum = arr[0];
+	for (uint16_t i = 1; i < Amount; ++i)
 		Sum += arr[i];
 
 	return Sum; // Возврат суммы
@@ -55,7 +55,7 @@ double **RM_CreateArray(uint16_t lines, uint16_t *cols)
 		return NULL; // Возврат NULL
 
 	// Вычисление выделяемой памяти под массив и размеры
-	int mem = sizeof(double) * int_SumOfArray(cols, lines) + // Память под непосредственно элементы
+	uint32_t mem = sizeof(double) * int_SumOfArray(cols, lines) + // Память под непосредственно элементы
 			  lines * (sizeof(uint16_t) + sizeof(uint16_t *)) + // Память под размеры строк и вектор указателей
 			  sizeof(uint16_t);									// Память под количество строк
 
@@ -156,6 +156,47 @@ uint8_t RM_WriteBinary(double **arr, FILE *f)
 	return ERR_NO; // Возврат кода отсутствия ошибок
 }
 
+//Функция копирования матрицы M
+double **RM_CopyMatrix(double **M)
+{
+	if (!M)			 // Если источник равен NULL
+		return NULL; // Завершение работы с возвратом NULL
+
+	//Вычисление необходимого объёма матрицы
+	uint16_t lines = RM_GetLineCount(M);		//Число строк матрицы
+	uint32_t mem = sizeof(uint16_t) +			//Память под число строк
+		lines * (sizeof(uint16_t) + sizeof(double *));	
+		// Добавление памяти для вектора указателей и размеров каждой строки
+	//Добавление памяти для самих элементов
+	for (uint16_t i = lines; i; i--)
+		mem += RM_GetElCount(M[i - 1]) * sizeof(double);
+
+	// Выделение памяти для массива, проверка работы malloc
+	double **p = (double **)malloc(mem);
+	if (!p)
+		return NULL;
+
+	p = (double **)((uint16_t *)p + 1); // Сдвиг указателя
+	((uint16_t *)p)[-1] = lines;		// Запись количества строк
+
+	/* Копирование области значений из одной матрицы в другую, 
+	число байт равно числу выделяемой памяти минус вектор указателей минус число строк матрицы */
+	memcpy(p + lines, M + lines, mem - (lines * sizeof(double) + sizeof(uint16_t)));
+
+	// Установка указателя первой строки
+	p[0] = (double *)((void *)p +				   // Начала вектора указателей +
+					  sizeof(uint16_t *) * lines + // Пространства под вектор указателей +
+					  sizeof(uint16_t));		   // Пространства под размер строки
+
+	// Установка остальных указателей относительно предыдущих
+	for (uint16_t i = 1; i < lines; ++i)
+	{
+		p[i] = (double *)((void *)(p[i - 1]) +						 // Начало предыдущей строки	+
+						  RM_GetElCount(p[i - 1]) * sizeof(double) + // Элементы предыдущей строки+
+						  sizeof(uint16_t));						 // Размеры строки
+	}
+	return p; // Возврат указателя на матрицу
+}
 /*Чтение матрицы из бинарного источника f
  * возвращает NULL при ошибке*/
 double **RM_ReadBinFile(FILE *f)

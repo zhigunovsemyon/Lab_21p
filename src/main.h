@@ -18,7 +18,8 @@ enum Commands
 	WRITE_TXT,
 	WRITE_BIN,
 	REMOVE,
-	SWITCH
+	SWITCH,
+	COPY
 };
 
 typedef struct
@@ -35,6 +36,7 @@ void Print(double **arr);
 double Random(double x, double y);
 uint8_t RemoveSingleMatrix(Matrixes *M);
 uint8_t ManualMatrixCreation(Matrixes *M);
+uint8_t CopyMatrix(Matrixes *M);
 uint8_t ReadTextFile(Matrixes *M, const char *fname);
 uint8_t WriteTextFile(const char *fname, double **arr);
 uint8_t WriteBinary(const char *fname, double **arr);
