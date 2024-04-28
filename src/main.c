@@ -67,6 +67,31 @@ int main(void)
 			break;
 
 		// Функции работы с открытой матрицей
+		case RM_LINE:
+		{
+			uint16_t line;
+			printf("Укажите удаляемую строку: ");
+			scanf("%hu", &line);
+			switch (RM_RemoveNthLine(M.m + M.cur, line))
+			{
+			case ERR_BADNUM:
+				puts("Указана неправильный номер строки!");
+				break;
+			case ERR_MALLOC:
+				puts("Не удалось удалить строку!");
+				break;
+			case ERR_GOTNULL:
+				puts("Неправильная строка!");
+				break;
+			case ERR_NO:
+				if (M.m[M.cur])	//Если строка не была удалена
+					break;		//то ничего не делается
+				RemoveSingleMatrix(&M); //Если была удалена, то значения счётчиков меняются
+				break;
+			}
+		}
+		break;
+
 		case FILL_MANUAL:
 			FillMatrixManualy(M.m[M.cur]);
 			break;
@@ -360,7 +385,7 @@ void FillMatrixManualy(double **arr)
 
 // Выбор пользователем действия над матрицей
 uint8_t CommandPicker(Matrixes *m)
-{ // q b k m p w t 0 c d i
+{ // q b k m p w t 0 c d i l
 	printf("\n%s%s%s%s%s", "Выберите действие:\n",
 		   "Для выхода из программы введите q,\n",
 		   "Чтобы прочитать матрицу из бинарного файла, введите b,\n",
@@ -368,11 +393,12 @@ uint8_t CommandPicker(Matrixes *m)
 		   "Чтобы в ручную ввести матрицу, введите m");
 	if (m->count) // Если матрицы есть
 	{
-		printf(",\n%s%s%s%s%s%s%s%s\n",
+		printf(",\n%s%s%s%s%s%s%s%s%s\n",
 			   "Чтобы вывести матрицу на экран, введите p\n",
 			   "Чтобы записать матрицу в бинарный файл, введите w\n",
-			   "Чтобы продублировать матрицу, введите c\n",
-			   "Чтобы записать матрицу в текстовый файл, введите t\n",
+			  "Чтобы продублировать матрицу, введите c\n",
+				"Чтобы записать матрицу в текстовый файл, введите t\n",
+				"Чтобы удалить строку, введите l\n",
 			   "0 - зануление матрицы\n", "i - ручное задание значений\n",
 			   "r - Наполнение из некоторого диапазона\n",
 			   "d - удаление матрицы из памяти\n");
@@ -405,6 +431,11 @@ uint8_t CommandPicker(Matrixes *m)
 		case 'D':
 			if (m->count)
 				return REMOVE;
+			break;
+		case 'l':
+		case 'L':
+			if (m->count)
+				return RM_LINE;
 			break;
 		case 's':
 		case 'S':

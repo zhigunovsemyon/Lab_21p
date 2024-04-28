@@ -19,7 +19,8 @@ enum Commands
 	WRITE_BIN,
 	REMOVE,
 	SWITCH,
-	COPY
+	COPY,
+	RM_LINE
 };
 
 typedef struct

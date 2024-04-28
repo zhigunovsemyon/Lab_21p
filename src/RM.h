@@ -9,8 +9,14 @@ enum Errors
 {
 	ERR_NO,
 	ERR_FILE,
-	ERR_MALLOC
+	ERR_MALLOC,
+	ERR_GOTNULL,
+	ERR_BADNUM
 };
+
+/*Удаляет line строку из M. Возвращает код ошибки
+ERR_GOTNULL, ERR_MALLOC, ERR_BADNUM*/
+uint8_t RM_RemoveNthLine(double*** M, uint16_t line);
 
 //Функция копирования матрицы M
 double **RM_CopyMatrix(double **M);
