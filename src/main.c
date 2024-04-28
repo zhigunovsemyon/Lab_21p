@@ -19,13 +19,10 @@
  * числом количество строк, в следующих числах этой строки -- размеры строк,
  * дальнейшие строки содержат непосредственно числа*/
 #include "main.h"
-#include "RM.h"
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 int main(void)
 {
 	srand(time(NULL));
+	char fname[100];
 	Matrixes M;
 	M.count = 0;
 	M.m = NULL;
@@ -50,23 +47,46 @@ int main(void)
 			if (ManualMatrixCreation(&M))
 				printf("Не удалось создать новую матрицу!\n");
 			break;
+
 		// Функции работы с открытой матрицей
-		case FILL_MANUAL:;
+		case FILL_MANUAL:
+			FillMatrixManualy(M.m[M.cur]);
+			break;
+
 		case PRINT:
 			Print(M.m[M.cur]);
 			break;
+
 		case FILL_ZERO:;
+			NullMatrix(M.m[M.cur]);
 			break;
-		case FILL_RANDOM:;
+
+		case FILL_RANDOM: {
+			double r[2];
+			printf("Введите диапазон чисел: ");
+			scanf("%lf %lf", r, r + 1);
+			FillMatrixRandom(M.m[M.cur], *r, *(r + 1));
+		}
+		break;
+
+		case WRITE_TXT:
+			printf("Название записываемого файла: ");
+			scanf("%99s", fname);
+			if (WriteTextFile(fname, M.m[M.cur]))
+				puts("Не удалось записать матрицу!");
 			break;
-		case WRITE_BIN:;
-			break;
-		case WRITE_TXT:;
+
+		case WRITE_BIN:
+			printf("Название записываемого файла: ");
+			scanf("%99s", fname);
+			if (WriteBinary(fname, M.m[M.cur]))
+				puts("Не удалось записать матрицу!");
 			break;
 		}
 	} while (1);
 }
 
+/*Ручной ввод создание матрицы пользователем*/
 uint8_t ManualMatrixCreation(Matrixes *M)
 {
 	uint16_t lines;
@@ -262,31 +282,6 @@ double **ReadTextFile(const char *fname)
 	if (f)		   // Если файл удалось открыть
 		fclose(f); // то осуществляется его закрытие
 	return ret;	   // Возврат матрицы, или NULL
-}
-
-/*Ручной ввод создание матрицы пользователем*/
-double **ManualCreate(void)
-{
-	uint16_t rows, *cols;
-	printf("Укажите число столбцов в матрице: ");
-	scanf("%hu", &rows);
-
-	// Создание массива размеров
-	cols = (uint16_t *)malloc(sizeof(uint16_t) * rows);
-	if (!cols)
-		return NULL;
-
-	// Наполнение массива размеров
-	for (uint16_t i = 0; i < rows; ++i)
-	{
-		printf("Введите размер %hu-ой строки", i);
-		scanf("%hu", cols + i);
-	}
-
-	// Создание матрицы из данных размеров, будет возвращён NULL при неудаче
-	double **m = RM_CreateArray(rows, cols);
-	free(cols);
-	return m;
 }
 
 // Возврат случайного числа из диапазона [a, b]. Требует предварительной инициализации посредством srand()

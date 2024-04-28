@@ -33,7 +33,6 @@ void NullMatrix(double **arr);
 void FillMatrixRandom(double **arr, double a, double b);
 void FillMatrixManualy(double **arr);
 double Random(double x, double y);
-double **ManualCreate(void);
 double **ReadTextFile(const char *fname);
 uint8_t WriteTextFile(const char *fname, double **arr);
 uint8_t WriteBinary(const char *fname, double **arr);
