@@ -28,16 +28,17 @@ typedef struct
 	uint8_t count;
 } Matrixes;
 
-uint8_t ManualMatrixCreation(Matrixes *M);
 void NullMatrix(double **arr);
 void FillMatrixRandom(double **arr, double a, double b);
 void FillMatrixManualy(double **arr);
+void Print(double **arr);
 double Random(double x, double y);
+uint8_t RemoveSingleMatrix(Matrixes *M);
+uint8_t ManualMatrixCreation(Matrixes *M);
 uint8_t ReadTextFile(Matrixes *M, const char *fname);
 uint8_t WriteTextFile(const char *fname, double **arr);
 uint8_t WriteBinary(const char *fname, double **arr);
 uint8_t ReadBinary(Matrixes *M, const char *fname);
-void Print(double **arr);
 uint8_t CommandPicker(Matrixes *m);
 uint16_t *CreateSizeArray(uint16_t rows);
 

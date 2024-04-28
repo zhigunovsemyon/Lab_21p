@@ -19,6 +19,8 @@
  * числом количество строк, в следующих числах этой строки -- размеры строк,
  * дальнейшие строки содержат непосредственно числа*/
 #include "main.h"
+#include "RM.h"
+#include <stdint.h>
 #include <stdio.h>
 int main(void)
 {
@@ -32,7 +34,11 @@ int main(void)
 		switch (CommandPicker(&M))
 		{
 		case LEAVE:
-			return ERR_NO;
+			//Пока есть матрицы, удалить крайнюю
+			for (;M.count;M.count--)
+				RM_Free(M.m[M.count - 1]);
+			free(M.m);		//Освобождение из памяти вектора матриц
+			return ERR_NO;	//Возврат кода отсутсвия ошибок
 
 		case SWITCH:
 			M.cur++;
@@ -40,23 +46,24 @@ int main(void)
 				M.cur = 0;
 			break;
 
-		case REMOVE:;
+		case REMOVE:
+			RemoveSingleMatrix(&M);
 			break;
 
 		case READ_BIN:
 			printf("Название открываемого файла: ");
 			scanf("%99s", fname);
-			if(ReadBinary(&M, fname))
+			if (ReadBinary(&M, fname))
 				puts("Не удалось создать матрицу!");
 			break;
 
 		case READ_TXT:
 			printf("Название открываемого файла: ");
 			scanf("%99s", fname);
-			if(ReadTextFile(&M, fname))
+			if (ReadTextFile(&M, fname))
 				puts("Не удалось создать матрицу!");
 			break;
-		
+
 		case MANUAL_CREATE:
 			if (ManualMatrixCreation(&M))
 				printf("Не удалось создать новую матрицу!\n");
@@ -98,6 +105,43 @@ int main(void)
 			break;
 		}
 	} while (1);
+}
+
+// Удаление одной матрицы из списка М
+uint8_t RemoveSingleMatrix(Matrixes *M)
+{
+	// Выделение памяти под вектор матриц
+	double ***tmp_vec;
+
+	// Освобождение матрицы из памяти, уменьшение счётчика
+	RM_Free(M->m[M->cur]);
+	M->count--;
+	// Если матрица была крайней, то её номер совпадает с новым значением
+	// счётчика
+	if (M->cur == M->count)
+	{
+		if (M->count) // Если таковая есть, то
+			M->cur--; // Переключение на предыдущую матрицу
+	}
+	else // Если матрица не была крайней
+		M->m[M->cur] =
+			M->m[M->count]; // На место текущей подставится бывшая крайняя
+
+	// Если после удаления ещё остались матрицы
+	if (M->count)
+	{ // осуществляется выделение памяти под новый вектор матриц
+		tmp_vec = (double ***)realloc(M->m, sizeof(double **) * (M->count));
+		if (!tmp_vec)
+			return ERR_MALLOC;
+		else // Он подставляется на место старого
+			M->m = tmp_vec;
+	}
+	else //Если число матриц стало равным нулю
+	{	//Освобождается память вектора, адрес зануляется
+		free(M->m);
+		M->m = NULL;
+	}
+	return ERR_NO;
 }
 
 /*Ручной ввод создание матрицы пользователем*/
@@ -174,7 +218,7 @@ uint8_t ReadBinary(Matrixes *M, const char *fname)
 	double **tmp = RM_ReadBinFile(f);
 	if (f)		   // Если файл удалось открыть
 		fclose(f); // то осуществляется его закрытие
-	
+
 	if (!tmp)
 		return ERR_MALLOC;
 
@@ -235,7 +279,7 @@ uint8_t ReadTextFile(Matrixes *M, const char *fname)
 
 	if (f)		   // Если файл удалось открыть
 		fclose(f); // то осуществляется его закрытие
-	
+
 	if (!tmp)
 		return ERR_MALLOC;
 
