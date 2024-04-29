@@ -130,6 +130,77 @@ uint8_t RM_RemoveNthLine(double ***M, uint16_t line)
 	return ERR_NO;
 }
 
+
+/*Вставляет line строку в M. Возвращает код ошибки
+ERR_GOTNULL, ERR_MALLOC, ERR_BADNUM*/
+uint8_t RM_InsertNthLine(double*** M, uint16_t line, uint16_t lineLen)
+{
+	if (!(*M))
+		return ERR_GOTNULL;
+	// Если номер удаляемой строки неверный, возврат соответствующего кода
+	if (line > RM_GetLineCount(*M))
+		return ERR_BADNUM;
+
+	/* Получение размеров матрицы в памяти, вычитание из него размера и
+	указателя на вычитаемую строку */
+	uint32_t mem_count = int_GetMatrMem(*M) + (sizeof(uint16_t) + sizeof(double*) +
+		sizeof(double) * lineLen);
+
+	// Выделение памяти под новую матрицу
+	double** tmp = (double**)malloc(mem_count);
+	if (!tmp)
+		return ERR_MALLOC;
+
+	// Запись числа элементов, сдвиг указателя
+	uint16_t newLineCount = RM_GetLineCount(*M) + 1;
+	*((uint16_t*)tmp) = newLineCount;
+	tmp = (double**)((uint16_t*)tmp + 1);
+
+	//Вспомогательные указатели. 
+	//Указывают на область после указателей -- число элеметов нулевой строки
+	double** pSrc = *M + RM_GetLineCount(*M);	//Старой матрицы
+	double** pDest = tmp + newLineCount;		//Новой матрицы
+
+	/* Подсчёт памяти, идущей перед вставляемой строкой, если строка нулевая,
+	 * mem_count = 0 */
+	mem_count = 0;
+	for (uint16_t i = 0; i < line; ++i)
+	{ // Добавление памяти размера строки и элементов этой строки
+		mem_count += sizeof(uint16_t) + sizeof(double) * RM_GetElCount((*M)[i]);
+	}
+	// Если вставляется не первая линия
+	if (mem_count) // то копируется область значений источника в новую матрицу,
+	{	// в количестве mem_count
+		memcpy(pDest, pSrc, mem_count);
+		// Сдвиг указателей на адреса после записанной области
+		pDest = (double**)((char*)pDest + mem_count);
+		pSrc = (double**)((char*)pSrc + mem_count);
+	}
+
+	// Запись числа элементов, сдвиг указателя
+	*((uint16_t*)pDest) = lineLen;
+	pDest = (double**)((char *)pDest//Исходная позиция указателя
+		+ sizeof(uint16_t)			//Сдвиг на размер
+		+ sizeof(double) * lineLen);//Сдвиг на область элементов
+
+	/* Подсчёт памяти, идущей после вставляемой строки, если строка крайняя,
+	 * mem_count = 0 */
+	mem_count = 0;
+	for (uint16_t i = line; i < RM_GetLineCount(*M); ++i)
+	{ // Добавление памяти размера строки и элементов этой строки
+		mem_count += sizeof(uint16_t) + sizeof(double) * RM_GetElCount((*M)[i]);
+	}
+	// Если вставляется не крайняя линия
+	if (mem_count) // то копируется область значений источника в новую матрицу,
+		memcpy(pDest, pSrc, mem_count); // в количестве mem_count
+
+	RM_Free(*M);
+	*M = tmp;
+	int_SetupPointers(*M);
+
+	return ERR_NO;
+}
+
 // Освобождение памаяти массива
 void RM_Free(double **arr)
 {

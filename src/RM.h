@@ -18,6 +18,10 @@ enum Errors
 ERR_GOTNULL, ERR_MALLOC, ERR_BADNUM*/
 uint8_t RM_RemoveNthLine(double*** M, uint16_t line);
 
+/*Вставляет line строку в M. Возвращает код ошибки
+ERR_GOTNULL, ERR_MALLOC, ERR_BADNUM*/
+uint8_t RM_InsertNthLine(double*** M, uint16_t line, uint16_t lineLen);
+
 //Функция копирования матрицы M
 double **RM_CopyMatrix(double **M);
 

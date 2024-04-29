@@ -20,7 +20,8 @@ enum Commands
 	REMOVE,
 	SWITCH,
 	COPY,
-	RM_LINE
+	RM_LINE,
+	INSERT_LINE
 };
 
 typedef struct

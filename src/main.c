@@ -92,6 +92,30 @@ int main(void)
 		}
 		break;
 
+		case INSERT_LINE:
+		{
+			uint16_t line, lineLen;
+			printf("Укажите вставляемую строку: ");
+			scanf("%hu", &line); 
+			printf("Укажите её длинну: ");
+			scanf("%hu", &lineLen);
+			switch (RM_InsertNthLine(M.m + M.cur, line, lineLen))
+			{
+			case ERR_BADNUM:
+				puts("Указана неправильный номер строки!");
+				break;
+			case ERR_MALLOC:
+				puts("Не удалось вставить строку!");
+				break;
+			case ERR_GOTNULL:
+				puts("Неправильная строка!");
+				break;
+			case ERR_NO:
+				break;
+			}
+		}
+		break;
+
 		case FILL_MANUAL:
 			FillMatrixManualy(M.m[M.cur]);
 			break;
@@ -385,7 +409,7 @@ void FillMatrixManualy(double **arr)
 
 // Выбор пользователем действия над матрицей
 uint8_t CommandPicker(Matrixes *m)
-{ // q b k m p w t 0 c d i l
+{ // q b k m p w t 0 c d i l f
 	printf("\n%s%s%s%s%s", "Выберите действие:\n",
 		   "Для выхода из программы введите q,\n",
 		   "Чтобы прочитать матрицу из бинарного файла, введите b,\n",
@@ -393,13 +417,14 @@ uint8_t CommandPicker(Matrixes *m)
 		   "Чтобы в ручную ввести матрицу, введите m");
 	if (m->count) // Если матрицы есть
 	{
-		printf(",\n%s%s%s%s%s%s%s%s%s\n",
+		printf(",\n%s%s%s%s%s%s%s%s%s%s\n",
 			   "Чтобы вывести матрицу на экран, введите p\n",
 			   "Чтобы записать матрицу в бинарный файл, введите w\n",
 			  "Чтобы продублировать матрицу, введите c\n",
 				"Чтобы записать матрицу в текстовый файл, введите t\n",
-				"Чтобы удалить строку, введите l\n",
-			   "0 - зануление матрицы\n", "i - ручное задание значений\n",
+			"Чтобы удалить строку, введите l\n",
+			"Чтобы вставить строку, введите i\n",
+			   "0 - зануление матрицы\n", "f - ручное задание значений\n",
 			   "r - Наполнение из некоторого диапазона\n",
 			   "d - удаление матрицы из памяти\n");
 		printf("Выбрана матрица %hu\n", m->cur);
@@ -432,6 +457,10 @@ uint8_t CommandPicker(Matrixes *m)
 			if (m->count)
 				return REMOVE;
 			break;
+		case 'i':
+		case 'I':
+			if (m->count)
+				return INSERT_LINE;
 		case 'l':
 		case 'L':
 			if (m->count)
@@ -442,8 +471,8 @@ uint8_t CommandPicker(Matrixes *m)
 			if (m->count)
 				return SWITCH;
 			break;
-		case 'i':
-		case 'I':
+		case 'f':
+		case 'F':
 			if (m->count)
 				return FILL_MANUAL;
 			break;
