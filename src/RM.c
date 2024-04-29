@@ -56,30 +56,36 @@ uint8_t RM_RemoveNthLine(double ***M, uint16_t line)
 	*((uint16_t*)tmp) = newLineCount;
 	tmp = (double **)((uint16_t*)tmp + 1);
 
+	//Вспомогательные указатели. 
+	//Указывают на область после указателей -- число элеметов нулевой строки
+	double **pSrc = *M + RM_GetLineCount(*M);	//Старой матрицы
+	double **pDest = tmp + newLineCount;		//Новой матрицы
+
 	/* Подсчёт памяти, идущей перед удаляемой строкой, если строка нулевая,
 	 * mem_count = 0 */
-	for (uint16_t i = 0, mem_count = 0; i < line; ++i)
+	mem_count = 0;
+	for (uint16_t i = 0; i < line; ++i)
 	{ // Добавление памяти размера строки и элементов этой строки
 		mem_count += sizeof(uint16_t) + sizeof(double) * RM_GetElCount((*M)[i]);
 	}
 
-	double **pSrc = *M + RM_GetLineCount(*M), // Указатель на область значений источника
-		**pDest = tmp + newLineCount; // Указатель на область значений новой матрицы
-
 	// Если удаляется не первая линия
 	if (mem_count) // то копируется область значений источника в новую матрицу,
-		memcpy(pDest, pSrc, mem_count); // в количестве mem_count
+	{	// в количестве mem_count
+		memcpy(pDest, pSrc, mem_count); 
+		// Сдвиг указателей на адреса после записанной области
+		pDest = (double **)((char *)pDest + mem_count);
+		pSrc = (double **)((char *)pSrc + mem_count);
+	}
 
 	// Сдвиг указателя на источник на адрес после пропускаемой строки
 	pSrc = (double **)((uint16_t *)pSrc + 1);	//Сдвиг на размер строки
 	pSrc = (double **)((double *)pSrc + RM_GetElCount((*M)[line]));//Сдвиг на число элементов
 	
-	// Сдвиг указателя на новую матрицу на адрес после записанной области
-	pDest = (double **)((char *)pDest + mem_count);
-
 	/* Подсчёт памяти, идущей после удаляемой строки, если строка крайняя,
 	 * mem_count = 0 */
-	for (uint16_t i = line + 1, mem_count = 0; i < RM_GetLineCount(*M); ++i)
+	mem_count = 0;
+	for (uint16_t i = line + 1; i < RM_GetLineCount(*M); ++i)
 	{ // Добавление памяти размера строки и элементов этой строки
 		mem_count += sizeof(uint16_t) + sizeof(double) * RM_GetElCount((*M)[i]);
 	}
@@ -106,57 +112,6 @@ uint8_t RM_RemoveNthLine(double ***M, uint16_t line)
 	*M = tmp;
 	return ERR_NO;
 }
-
-/*Удаляет line строку из M. Возвращает код ошибки
-ERR_GOTNULL, ERR_MALLOC, ERR_BADNUM*/
-// uint8_t RM_RemoveNthLine(double*** M, uint16_t line)
-// {
-// 	if (!(*M))
-// 		return ERR_GOTNULL;
-//
-// 	//Если номер удаляемой строки неверный, возврат соответствующего кода
-// 	if (line >= RM_GetLineCount(*M))
-// 		return ERR_BADNUM;
-//
-// 	//Если после удаления строки, матрицы не останется
-// 	if (RM_GetLineCount(*M) == 1)
-// 	{
-// 		RM_Free(*M);
-// 		*M = NULL;
-// 		return ERR_NO;
-// 	}
-//
-// 	/* Подсчёт памяти, идущей после удаляемой строки, если строка крайняя,
-// mem_count = 0 */ 	uint32_t mem_count = 0; 	for (uint16_t i = line + 1;
-// i < RM_GetElCount(*M); ++i) 	{	//Добавление памяти размера строки и
-// элементов этой строки 		mem_count += sizeof(uint16_t) + sizeof(double) *
-// RM_GetElCount((*M)[i]);
-// 	}
-// 	//Выделение памяти под буфер со следующими строками, копирование в него
-// 	double** bufNewLines = (double**)malloc(mem_count);
-// 	if (!bufNewLines)
-// 		return ERR_MALLOC;
-// 	memcpy(bufNewLines, int_GetMinusOne((*M)[line + 1]), mem_count);
-//
-// 	//Перевыделение памяти под новую матрицу
-// 	double** tmp = (double**)realloc(*M,
-// 		int_GetMatrMem(*M) - (sizeof(uint16_t) + sizeof(double) *
-// RM_GetElCount((*M)[line]))); 	if (!tmp)
-// 	{
-// 		free(bufNewLines);
-// 		return ERR_MALLOC;
-// 	}
-//
-// 	//Копирование из буфера в на место, перезапись размеров и указателя
-// 	memcpy(int_GetMinusOne(tmp[line]), bufNewLines, mem_count);
-// 	*M = tmp;
-// 	--*((uint16_t *)(int_GetMinusOne(*M)));
-//
-// 	//Освобождение буфера
-// 	free(bufNewLines);
-//
-// 	return ERR_NO;
-// }
 
 /*Функция считает сумму элементов данного массива arr из элементов Amount */
 static uint16_t int_SumOfArray(uint16_t *arr, uint16_t Amount)
