@@ -32,7 +32,7 @@ static uint32_t int_GetMatrMem(double **M)
 }
 
 /*Расстановка указателей на строки матрицы p, если область значений уже существует*/
-void int_SetupPointers(double** p)
+static void int_SetupPointers(double** p)
 {
 	// Установка указателя первой строки
 	p[0] =
