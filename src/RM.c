@@ -6,6 +6,17 @@ static void *int_GetMinusOne(void *p)
 	return (void *)(((uint16_t *)p) - 1);
 }
 
+/*Функция считает сумму элементов данного массива arr из элементов Amount */
+static uint16_t int_SumOfArray(uint16_t* arr, uint16_t Amount)
+{
+	/*Перебор элементов массива */
+	uint16_t Sum = arr[0];
+	for (uint16_t i = 1; i < Amount; ++i)
+		Sum += arr[i];
+
+	return Sum; // Возврат суммы
+}
+
 // Получение размера, который занимает матрица в памяти
 static uint32_t int_GetMatrMem(double **M)
 {
@@ -18,6 +29,25 @@ static uint32_t int_GetMatrMem(double **M)
 		mem += RM_GetElCount(M[i - 1]) * sizeof(double);
 
 	return mem;
+}
+
+/*Расстановка указателей на строки матрицы p, если область значений уже существует*/
+void int_SetupPointers(double** p)
+{
+	// Установка указателя первой строки
+	p[0] =
+		(double*)((char*)p + // Начала вектора указателей +
+			sizeof(uint16_t*) * RM_GetLineCount(p) + // Пространства под вектор указателей +
+			sizeof(uint16_t)); // Пространства под размер строки
+
+	// Установка остальных указателей относительно предыдущих
+	for (uint16_t i = 1; i < RM_GetLineCount(p); ++i)
+	{
+		p[i] =
+			(double*)((char*)(p[i - 1]) + // Начало предыдущей строки	+
+				RM_GetElCount(p[i - 1]) * sizeof(double) + // Элементы предыдущей строки+
+				sizeof(uint16_t));						  // Размеры строки
+	}
 }
 
 /*Удаляет line строку из M. Возвращает код ошибки
@@ -93,35 +123,11 @@ uint8_t RM_RemoveNthLine(double ***M, uint16_t line)
 	if (mem_count) // то копируется область значений источника в новую матрицу,
 		memcpy(pDest, pSrc, mem_count); // в количестве mem_count
 
-	// Установка указателя первой строки
-	tmp[0] =
-		(double *)((char *)tmp + // Начала вектора указателей +
-				   sizeof(uint16_t *) * newLineCount + // Пространства под вектор указателей +
-				   sizeof(uint16_t)); // Пространства под размер строки
-
-	// Установка остальных указателей относительно предыдущих
-	for (uint16_t i = 1; i < newLineCount; ++i)
-	{
-		tmp[i] =
-			(double *)((char *)(tmp[i - 1]) + // Начало предыдущей строки	+
-					   RM_GetElCount(tmp[i - 1]) * sizeof(double) + // Элементы предыдущей строки+
-					   sizeof(uint16_t));						  // Размеры строки
-	}
-
 	RM_Free(*M);
 	*M = tmp;
+	int_SetupPointers(*M);
+	
 	return ERR_NO;
-}
-
-/*Функция считает сумму элементов данного массива arr из элементов Amount */
-static uint16_t int_SumOfArray(uint16_t *arr, uint16_t Amount)
-{
-	/*Перебор элементов массива */
-	uint16_t Sum = arr[0];
-	for (uint16_t i = 1; i < Amount; ++i)
-		Sum += arr[i];
-
-	return Sum; // Возврат суммы
 }
 
 // Освобождение памаяти массива
@@ -287,18 +293,7 @@ double **RM_CopyMatrix(double **M)
 	строк матрицы */
 	memcpy(p + lines, M + lines, mem - (lines * sizeof(double) + sizeof(uint16_t)));
 
-	// Установка указателя первой строки
-	p[0] = (double *)((char *)p + // Начала вектора указателей +
-					  sizeof(uint16_t *) * lines + // Пространства под вектор указателей +
-					  sizeof(uint16_t)); // Пространства под размер строки
-
-	// Установка остальных указателей относительно предыдущих
-	for (uint16_t i = 1; i < lines; ++i)
-	{
-		p[i] = (double *)((char *)(p[i - 1]) + // Начало предыдущей строки	+
-						  RM_GetElCount(p[i - 1]) * sizeof(double) + // Элементы предыдущей строки+
-						  sizeof(uint16_t));						 // Размеры строки
-	}
+	int_SetupPointers(p);
 	return p; // Возврат указателя на матрицу
 }
 /*Чтение матрицы из бинарного источника f
@@ -330,18 +325,7 @@ double **RM_ReadBinFile(FILE *f)
 	// указателей
 	fread(p + lines, 1, mem - sizeof(uint16_t), f);
 
-	// Установка указателя первой строки
-	p[0] = (double *)((char *)p + // Начала вектора указателей +
-					  sizeof(uint16_t *) * lines + // Пространства под вектор указателей +
-					  sizeof(uint16_t)); // Пространства под размер строки
-
-	// Установка остальных указателей относительно предыдущих
-	for (uint16_t i = 1; i < lines; ++i)
-	{
-		p[i] = (double *)((char *)(p[i - 1]) + // Начало предыдущей строки	+
-						  RM_GetElCount(p[i - 1]) * sizeof(double) + // Элементы предыдущей строки+
-						  sizeof(uint16_t));						 // Размеры строки
-	}
+	int_SetupPointers(p);
 	return p; // Возврат указателя на матрицу
 }
 
